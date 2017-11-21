@@ -1,10 +1,20 @@
 #!/opt/libreoffice5.4/program/python
 # -*- coding: utf-8 -*-
 import unohelper  # オートメーションには必須(必須なのはuno)。
+import glob
+import os, sys
+
+def main():
+	src_path = os.path.join(os.path.dirname(sys.path[0]), "src")
+	os.chdir(src_path)
+	ods = glob.glob("*.ods")[0]
+	print(ods)
 
 
 
 
+if __name__ == "__main__":
+	main()
 
 
 
