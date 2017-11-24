@@ -26,7 +26,7 @@ def macro(documentevent=None):  # 引数は文書のイベント駆動用。
 	pipe = smgr.createInstanceWithContext("com.sun.star.io.Pipe", ctx)
 	textoutputstream = smgr.createInstanceWithContext("com.sun.star.io.TextOutputStream", ctx)
 	textoutputstream.setOutputStream(pipe)
-	script = """
+	script = """# -*- coding: utf-8 -*-
 def macro():
 	doc = XSCRIPTCONTEXT.getDocument()
 	controller = doc.getCurrentController()  # コントローラーを取得。
