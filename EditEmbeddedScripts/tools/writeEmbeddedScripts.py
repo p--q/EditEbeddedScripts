@@ -7,7 +7,7 @@ def macro(documentevent=None):  # 引数は文書のイベント駆動用。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。	
 	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)
 	transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(doc)
-	contentidentifierstring = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # UCPとID。vnd.sun.star.tdoc:/ID
+	contentidentifierstring = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # vnd.sun.star.tdoc:/IDを取得。
 	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  	
 	scriptsdir = "{}/Scripts".format(contentidentifierstring)
 	if not simplefileaccess.exists(scriptsdir) and not simplefileaccess.isFolder(scriptsdir):  # scriptsdirというファイルもフォルダも存在しない時。
@@ -20,7 +20,8 @@ def macro(documentevent=None):  # 引数は文書のイベント駆動用。
 	if not simplefileaccess.exists(pythondir):
 		print("failed to create python directory.")	
 	pythondir = "{}/".format(pythondir)
-	scriptpath = "{}hello.py".format(pythondir)
+# 	scriptpath = "{}hello.py".format(pythondir)
+	scriptpath = "{}hello.mo".format(pythondir)
 	if simplefileaccess.exists(scriptpath):
 		simplefileaccess.kill(scriptpath)
 	pipe = smgr.createInstanceWithContext("com.sun.star.io.Pipe", ctx)
