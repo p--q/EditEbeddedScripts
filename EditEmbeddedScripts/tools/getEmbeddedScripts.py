@@ -10,7 +10,7 @@ def main():
 	ods = glob.glob("*.ods")[0]
 	print(ods)
 
-
+#  開いているドキュメントから探す?でもそれだと最新版が取得できない？
 
 
 if __name__ == "__main__":
