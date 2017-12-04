@@ -16,8 +16,10 @@ def macro():
 	storagefactory = smgr.createInstanceWithContext('com.sun.star.embed.StorageFactory', ctx)
 	storage = storagefactory.createInstanceWithArguments((doc_fileurl, ElementModes.READ))
 	
-	
-	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  
+	tcu = smgr.createInstanceWithContext("pq.Tcu", ctx)  # サービス名か実装名でインスタンス化。
+
+	tcu.wtree(storage)	
+
 	
 	
 	
