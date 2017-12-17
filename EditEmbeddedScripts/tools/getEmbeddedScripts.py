@@ -2,33 +2,56 @@
 # -*- coding: utf-8 -*-
 import unohelper  # オートメーションには必須(必須なのはuno)。
 import glob
-import os, sys
-from com.sun.star.embed import ElementModes  # 定数
-def macro():  
+import os
+def main():  
 	ctx = XSCRIPTCONTEXT.getComponentContext()  # コンポーネントコンテクストの取得。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。	
-	
-	src_path = os.path.join(os.path.dirname(sys.path[0]), "src")
-	os.chdir(src_path)
-	ods = glob.glob("*.ods")[0]
-	systempath = os.path.join(os.getcwd(), ods)
-	doc_fileurl = unohelper.systemPathToFileUrl(systempath)
-	storagefactory = smgr.createInstanceWithContext('com.sun.star.embed.StorageFactory', ctx)
-	storage = storagefactory.createInstanceWithArguments((doc_fileurl, ElementModes.READ))
-	
-	tcu = smgr.createInstanceWithContext("pq.Tcu", ctx)  # サービス名か実装名でインスタンス化。
-
-	tcu.wtree(storage)	
-
-	
-	
-	
-	
-	
-
-
-
-g_exportedScripts = macro, #マクロセレクターに限定表示させる関数をタプルで指定。		
+	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  # SimpleFileAccess
+	os.chdir("..")  # 一つ上のディレクトリに移動。
+	ods = glob.glob("*.ods")[0]  # odsファイルを取得。最初の一つのみ取得。
+	systempath = os.path.join(os.getcwd(), ods)  # odsファイルのフルパス。
+	doc_fileurl = unohelper.systemPathToFileUrl(systempath)  # fileurlに変換。
+	desktop = ctx.getByName('/singletons/com.sun.star.frame.theDesktop')  # デスクトップの取得。
+	components = desktop.getComponents()  # ロードしているコンポーネントコレクションを取得。
+	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)  # TransientDocumentsDocumentContentFactory
+	for component in components:  # 各コンポーネントについて。
+		if hasattr(component, "getURL"):  # スタートモジュールではgetURL()はないためチェックする。
+			if component.getURL()==doc_fileurl:  # fileurlが一致するとき、ドキュメントが開いているということ。
+				transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(component)
+				pkgurl = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # ex. vnd.sun.star.tdoc:/1
+				python_fileurl = "/".join((pkgurl, "Scripts/python"))  # ドキュメント内フォルダへのフルパスを取得。
+				if simplefileaccess.exists(python_fileurl):  # 埋め込みマクロフォルダが存在する時。
+					dest_dir = createDest(simplefileaccess)  # 出力先フォルダのfileurlを取得。
+					simplefileaccess.copy(python_fileurl, dest_dir)  # 埋め込みマクロフォルダを出力先フォルダにコピーする。
+					print("The embedded Macro folder in '{}' has been exported to '{}'.".format(python_fileurl, dest_dir))
+					return	# 関数を出る。		
+	else:  # ドキュメントを開いていない時。
+		package = smgr. createInstanceWithArgumentsAndContext("com.sun.star.packages.Package", (doc_fileurl,), ctx)  # Package。第2引数はinitialize()メソッドで後でも渡せる。
+		docroot = package.getByHierarchicalName("/")  # /Scripts/pythonは不可。
+		if ("Scripts" in docroot and "python" in docroot["Scripts"]):  # 埋め込みマクロフォルダが存在する時。
+			dest_dir = createDest(simplefileaccess)  # 出力先フォルダのfileurlを取得。
+			getContents(simplefileaccess, docroot["Scripts"]["python"], dest_dir) 
+			print("The embedded Macro folder in '{}' has been exported to '{}'.".format(ods, dest_dir))
+			return	# 関数を出る。	
+	print("The embedded macro folder does not exist in {}.".format(ods))  # 埋め込みマクロフォルダが存在しない時。
+def getContents(simplefileaccess, folder, pwd):
+	for sub in folder:  # 子要素のオブジェクトについて。
+		name = sub.getName()  # 子要素のオブジェクトの名前を取得。
+		fileurl = "/".join((pwd, name))  # 出力先のfileurlを取得。
+		if sub.supportsService("com.sun.star.packages.PackageFolder"):  # PackageFolderの時はフォルダとして出力。
+			if not simplefileaccess.exists(fileurl):
+				simplefileaccess.createFolder(fileurl)
+			getContents(simplefileaccess, sub, fileurl)  # 子要素のオブジェクトについて同様に出力。
+		elif sub.supportsService("com.sun.star.packages.PackageStream"):  # PackageStreamのときはファイルとして出力。
+			simplefileaccess.writeFile(fileurl, sub.getInputStream())  # ファイルが存在しなければ新規作成してくれる。			
+def createDest(simplefileaccess):  # 出力先フォルダのfileurlを取得する。
+	src_path = os.path.join(os.getcwd(), "src")  # srcフォルダのパスを取得。
+	src_fileurl = unohelper.systemPathToFileUrl(src_path)  # fileurlに変換。
+	destdir = "/".join((src_fileurl, "Scripts/python"))
+	if simplefileaccess.exists(destdir):  # pythonフォルダがすでにあるとき
+		simplefileaccess.kill(destdir)  # すでにあるpythonフォルダを削除。	
+	simplefileaccess.createFolder(destdir)  # pythonフォルダを作成。
+	return destdir			
 if __name__ == "__main__":  # オートメーションで実行するとき
 	def automation():  # オートメーションのためにglobalに出すのはこの関数のみにする。
 		import officehelper
@@ -66,17 +89,7 @@ if __name__ == "__main__":  # オートメーションで実行するとき
 				def getDocument(self):
 					return self.getDesktop().getCurrentComponent()
 			return ScriptContext(ctx)  
-		XSCRIPTCONTEXT = createXSCRIPTCONTEXT()  # XSCRIPTCONTEXTの取得。
-# 		doc = XSCRIPTCONTEXT.getDocument()  # 現在開いているドキュメントを取得。
-# 		doctype = "scalc", "com.sun.star.sheet.SpreadsheetDocument"  # Calcドキュメントを開くとき。
-	# 	doctype = "swriter", "com.sun.star.text.TextDocument"  # Writerドキュメントを開くとき。
-# 		if (doc is None) or (not doc.supportsService(doctype[1])):  # ドキュメントが取得できなかった時またはCalcドキュメントではない時
-# 			XSCRIPTCONTEXT.getDesktop().loadComponentFromURL("private:factory/{}".format(doctype[0]), "_blank", 0, ())  # ドキュメントを開く。ここでdocに代入してもドキュメントが開く前にmacro()が呼ばれてしまう。
-# 		flg = True
-# 		while flg:
-# 			doc = XSCRIPTCONTEXT.getDocument()  # 現在開いているドキュメントを取得。
-# 			if doc is not None:
-# 				flg = (not doc.supportsService(doctype[1]))  # ドキュメントタイプが確認できたらwhileを抜ける。
-		return XSCRIPTCONTEXT
+		return createXSCRIPTCONTEXT()  # XSCRIPTCONTEXTの取得。
 	XSCRIPTCONTEXT = automation()  # XSCRIPTCONTEXTを取得。	
-	macro()  # マクロの実行。
+	main()
+	
