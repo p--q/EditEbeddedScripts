@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unohelper  # オートメーションには必須(必須なのはuno)。
 import glob
-import os
+import os, sys
 def main():  
 	ctx = XSCRIPTCONTEXT.getComponentContext()  # コンポーネントコンテクストの取得。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。	
@@ -49,7 +49,12 @@ def createDest(simplefileaccess):  # 出力先フォルダのfileurlを取得す
 	src_fileurl = unohelper.systemPathToFileUrl(src_path)  # fileurlに変換。
 	destdir = "/".join((src_fileurl, "Scripts/python"))
 	if simplefileaccess.exists(destdir):  # pythonフォルダがすでにあるとき
-		simplefileaccess.kill(destdir)  # すでにあるpythonフォルダを削除。	
+		s = input("Delete local src/Scripts/python?[y/N]").lower()
+		if s=="y":
+			simplefileaccess.kill(destdir)  # すでにあるpythonフォルダを削除。	
+		else:
+			print("Exit")
+			sys.exit(0)
 	simplefileaccess.createFolder(destdir)  # pythonフォルダを作成。
 	return destdir			
 if __name__ == "__main__":  # オートメーションで実行するとき
