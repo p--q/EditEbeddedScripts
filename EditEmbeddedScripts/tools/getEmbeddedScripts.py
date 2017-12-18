@@ -49,7 +49,7 @@ def createDest(simplefileaccess):  # 出力先フォルダのfileurlを取得す
 	src_fileurl = unohelper.systemPathToFileUrl(src_path)  # fileurlに変換。
 	destdir = "/".join((src_fileurl, "Scripts/python"))
 	if simplefileaccess.exists(destdir):  # pythonフォルダがすでにあるとき
-		s = input("Delete local src/Scripts/python?[y/N]").lower()
+		s = input("Delete the existing src/Scripts/python?[y/N]").lower()
 		if s=="y":
 			simplefileaccess.kill(destdir)  # すでにあるpythonフォルダを削除。	
 		else:
