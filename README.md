@@ -12,6 +12,8 @@ LibreOffice 5.4 in Ubuntu 14.04 32bit
 
 Place the Calc document you want to edit the embedded macro in the same hierarchy as the tools folder.
 
+ex.  CalcDoc.ods
+
 ### Write embedded macro with replaceEmbeddedScripts.py
 
 Put the macro you want to embed in the src folder in the same path as in the document.
