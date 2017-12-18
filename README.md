@@ -4,9 +4,9 @@ This is a PyDev project for editing embedded macros.
 
 ## System requirements
 
-    The confirmed environment is as follows.
+The confirmed environment is as follows.
 
-        LibreOffice 5.4 in Ubuntu 14.04 32bit
+LibreOffice 5.4 in Ubuntu 14.04 32bit
 
 ## USAGE
 
