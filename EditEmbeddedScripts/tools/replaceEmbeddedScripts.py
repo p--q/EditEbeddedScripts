@@ -44,10 +44,14 @@ def writeScripts(simplefileaccess, package, source_fileurl, packagefolder):  # �
 	for fileurl in simplefileaccess.getFolderContents(source_fileurl, True):  # Trueでフォルダも含む。再帰的ではない。フルパスのfileurlが返る。
 		name = fileurl.split("/")[-1]  # 要素名を取得。
 		if simplefileaccess.isFolder(fileurl):  # フォルダの時。
+			if name=="__pycache__":  # __pycache__フォルダは書き込まない。
+				continue
 			if not name in packagefolder:  # パッケージの同名のPackageFolderがない時。
 				packagefolder[name] = package.createInstanceWithArguments((True,))  # キーをnameとするPackageFolderを挿入。
 			writeScripts(simplefileaccess, package, fileurl, packagefolder[name])  # 再帰呼び出し。			
 		else:
+			if name.endswith(".pyc"):  # pycファイルは書き込まない。
+				continue
 			packagefolder[name] = package.createInstance()  # キーをnameとするPackageStreamを挿入。
 			packagefolder[name].setInputStream(simplefileaccess.openFileRead(fileurl))  # ソースファイルからインプットストリームを取得。
 if __name__ == "__main__":  # オートメーションで実行するとき
