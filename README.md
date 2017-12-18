@@ -10,7 +10,7 @@ LibreOffice 5.4 in Ubuntu 14.04 32bit
 
 ## USAGE
 
-Place the Calc document you want to edit the embedded macro in the same hierarchy as the tools folder.
+Place the only one Calc document you want to edit the embedded macro in the same hierarchy as the tools folder.
 
 ex.  CalcDoc.ods
 
