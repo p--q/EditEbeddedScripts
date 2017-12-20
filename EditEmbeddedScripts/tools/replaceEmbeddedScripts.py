@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unohelper  # オートメーションには必須(必須なのはuno)。
 import glob
-import os
+import os, sys
 from com.sun.star.beans import PropertyValue  # Struct
 from com.sun.star.document import MacroExecMode  # 定数
 def main():  
