@@ -35,3 +35,5 @@ Be careful as the contents of the src folder are replaced.
 2017-12-18 version 0.1.0 First release.
 
 2017-12-21 version 0.1.1 Fixed a serious bug. Scripts/python folder in the document is registered in manifest.xml.
+
+2017-12-21 version 0.1.2 Changed how to delete an existing the embedded macro folder.
