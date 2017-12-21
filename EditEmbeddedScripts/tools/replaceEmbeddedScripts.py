@@ -19,22 +19,24 @@ def main():
 	systempath = os.path.join(os.getcwd(), ods)  # odsファイルのフルパス。
 	doc_fileurl = unohelper.systemPathToFileUrl(systempath)  # fileurlに変換。
 	desktop = ctx.getByName('/singletons/com.sun.star.frame.theDesktop')  # デスクトップの取得。
-	flg = getLoadedComponent(desktop, doc_fileurl)  # ドキュメントが開いていたら保存して閉じる。
+	flg = isComponentLoaded(desktop, doc_fileurl)  # ドキュメントが開いていたら保存して閉じる。
 	python_pkgurl = getVndSunStarPkgUrl(ctx, smgr, doc_fileurl)  # pkgurlの取得。
 	if simplefileaccess.exists(python_pkgurl):  # 埋め込みマクロフォルダがすでに存在する時。simplefileaccess.kill(pkgurl)では削除できない。
 		package = smgr.createInstanceWithArgumentsAndContext("com.sun.star.packages.Package", (doc_fileurl,), ctx)  # Package。第2引数はinitialize()メソッドで後でも渡せる。
 		docroot = package.getByHierarchicalName("/")  # /Scripts/pythonは不可。
-		del docroot["Scripts"]  # すでに存在する埋め込みマクロフォルダを削除。
+		for name in docroot["Scripts"]["python"].getElementNames(): # すでに存在する埋め込みマクロフォルダの各要素を削除。
+			del docroot["Scripts"]["python"][name]
 		package.commitChanges()  # ファイルにパッケージの変更を書き込む。manifest.xmlも編集される。	
-	propertyvalues = PropertyValue(Name="Hidden",Value=True),
-	doc = desktop.loadComponentFromURL(doc_fileurl, "_blank", 0, propertyvalues)  # ドキュメントをバックグラウンドで開く。
-	if doc is None:  # ドキュメントが壊れているときなどはNoneになる。
-		print("{} may be corrupted.".format(ods), file=sys.stderr)
-		sys.exit()
-	createEmbeddedMacroFolder(ctx, smgr, simplefileaccess, doc)  # 埋め込みマクロフォルダを新規作成。開いているドキュメントにしか作成できない。
-	doc.store()  # ドキュメントを保存する。
-	doc.close(True)  # ドキュメントを閉じる。
-	simplefileaccess.copy(source_fileurl, python_pkgurl)  # 埋め込みマクロフォルダにコピーする。開いているドキュメントでは書き込めない時がある。
+	else:  # 埋め込みマクロフォルダが存在しない時。
+		propertyvalues = PropertyValue(Name="Hidden",Value=True),
+		doc = desktop.loadComponentFromURL(doc_fileurl, "_blank", 0, propertyvalues)  # ドキュメントをバックグラウンドで開く。
+		if doc is None:  # ドキュメントが壊れているときなどはNoneになる。
+			print("{} may be corrupted.".format(ods), file=sys.stderr)
+			sys.exit()
+		createEmbeddedMacroFolder(ctx, smgr, simplefileaccess, doc)  # 埋め込みマクロフォルダを新規作成。開いているドキュメントにしか作成できない。
+		doc.store()  # ドキュメントを保存する。
+		doc.close(True)  # ドキュメントを閉じる。
+	simplefileaccess.copy(source_fileurl, python_pkgurl)  # 埋め込みマクロフォルダにコピーする。開いているドキュメントでは書き込みが反映されない時があるので閉じたドキュメントにする。
 	if flg:  # ドキュメントが開いていた時はマクロを有効にして開き直す。
 		propertyvalues = PropertyValue(Name = "MacroExecutionMode", Value=MacroExecMode.ALWAYS_EXECUTE_NO_WARN),  # マクロを実行可能にする。
 		desktop.loadComponentFromURL(doc_fileurl, "_blank", 0, propertyvalues)  # ドキュメントを開く。
@@ -46,7 +48,7 @@ def getVndSunStarPkgUrl(ctx, smgr, doc_fileurl):  # pkgurlの取得。
 	vndsunstarpkgurlreference = vndsunstarpkgurlreferencefactory.createVndSunStarPkgUrlReference(urireference)  # ドキュメントのvnd.sun.star.pkgプロトコールにUriReferenceを変換。
 	pkgurl = vndsunstarpkgurlreference.getUriReference()  # UriReferenceから文字列のURIを取得。
 	return "/".join((pkgurl, "Scripts/python"))  # 開いていないドキュメントの埋め込みマクロフォルダへのフルパスを取得。	
-def getLoadedComponent(desktop, doc_fileurl):  # ドキュメントが開いていたら保存して閉じる。
+def isComponentLoaded(desktop, doc_fileurl):  # ドキュメントが開いていたら保存して閉じる。
 	components = desktop.getComponents()  # ロードしているコンポーネントコレクションを取得。
 	for component in components:  # 各コンポーネントについて。
 		if hasattr(component, "getURL"):  # スタートモジュールではgetURL()はないためチェックする。
