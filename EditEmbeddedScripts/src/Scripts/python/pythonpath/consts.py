@@ -1,2 +1,3 @@
 # -*- coding: utf-8 -*-
-LISTSHEET = {"name": "text from module"}
+COLORS = {"CellBackgroundColor": 0x0000FF,\
+			"CellRangeBackgroundColor": 0xFF0000}
