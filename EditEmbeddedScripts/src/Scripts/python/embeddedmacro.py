@@ -10,25 +10,6 @@ from com.sun.star.ui.ContextMenuInterceptorAction import EXECUTE_MODIFIED  # enu
 from com.sun.star.ui import ActionTriggerSeparatorType  # 定数
 global XSCRIPTCONTEXT  # PyDevのエラー抑制用。
 consts = None
-
-# def load_module(simplefileaccess, modulepath):
-# 	inputstream = simplefileaccess.openFileRead(modulepath)
-# 	dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
-# 	source = bytes(b).decode("utf-8")  # モジュールのソースをテキストで取得。
-# 	mod = sys.modules.setdefault(modulepath, ModuleType(modulepath))  # 新規モジュールをsys.modulesに挿入。
-# 	code = compile(source, modulepath, 'exec')  # urlを呼び出し元としてソースコードをコンパイルする。
-# 	mod.__file__ = modulepath  # モジュールの__file__を設定。
-# 	mod.__package__ = ''  # モジュールの__package__を設定。
-# 	exec(code, mod.__dict__)  # モジュールの名前空間を設定する。
-# 	return mod
-# def getModuleFolderPath(ctx, smgr, doc):
-# 	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)
-# 	transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(doc)
-# 	tdocurl = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # ex. vnd.sun.star.tdoc:/1	
-# 	return "/".join((tdocurl, "Scripts/python/pythonpath"))  # 開いているドキュメント内の埋め込みマクロフォルダへのパス。
-
-
-
 def macro(documentevent=None):  # 引数は文書のイベント駆動用。  
 	doc = XSCRIPTCONTEXT.getDocument() if documentevent is None else documentevent.Source  # ドキュメントのモデルを取得。 
 	controller = doc.getCurrentController()  # コントローラの取得。
