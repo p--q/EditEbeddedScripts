@@ -1,33 +1,33 @@
 #!/opt/libreoffice5.4/program/python
 # -*- coding: utf-8 -*-
-import unohelper  # オートメーションには必須(必須なのはuno)。
+# import unohelper  # オートメーションには必須(必須なのはuno)。
 import sys
 from types import ModuleType
-consts = None
+consts = None  # ドキュメントに埋め込んだモジュール。
 def macro(documentevent=None):  # 引数は文書のイベント駆動用。  
 	doc = XSCRIPTCONTEXT.getDocument() if documentevent is None else documentevent.Source  # ドキュメントのモデルを取得。 
 	controller = doc.getCurrentController()  # コントローラの取得。
 	ctx = XSCRIPTCONTEXT.getComponentContext()  # コンポーネントコンテクストの取得。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。
 	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  # SimpleFileAccess
-	modulefolderpath = getModuleFolderPath(ctx, smgr, doc)
+	modulefolderpath = getModuleFolderPath(ctx, smgr, doc)  # 埋め込みモジュールフォルダへのURLを取得。
 	global consts
 	if consts is None:
-		consts = load_module(simplefileaccess, "/".join((modulefolderpath, "consts.py")))
+		consts = load_module(simplefileaccess, "/".join((modulefolderpath, "consts.py")))  # import constsと同等。
 	s = consts.LISTSHEET["name"]
 	sheet = controller.getActiveSheet()
 	sheet["A1"].setString(s)
-def load_module(simplefileaccess, modulepath):
-	inputstream = simplefileaccess.openFileRead(modulepath)
+def load_module(simplefileaccess, modulepath):  # modulepathのモジュールを取得。
+	inputstream = simplefileaccess.openFileRead(modulepath)  # モジュールファイルからインプットストリームを取得。
 	dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
 	source = bytes(b).decode("utf-8")  # モジュールのソースをテキストで取得。
 	mod = sys.modules.setdefault(modulepath, ModuleType(modulepath))  # 新規モジュールをsys.modulesに挿入。
 	code = compile(source, modulepath, 'exec')  # urlを呼び出し元としてソースコードをコンパイルする。
 	mod.__file__ = modulepath  # モジュールの__file__を設定。
 	mod.__package__ = ''  # モジュールの__package__を設定。
-	exec(code, mod.__dict__)  # モジュールの名前空間を設定する。
+	exec(code, mod.__dict__)  # 実行してモジュールの名前空間を取得。
 	return mod
-def getModuleFolderPath(ctx, smgr, doc):
+def getModuleFolderPath(ctx, smgr, doc):  # 埋め込みモジュールフォルダへのURLを取得。
 	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)
 	transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(doc)
 	tdocurl = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # ex. vnd.sun.star.tdoc:/1	
