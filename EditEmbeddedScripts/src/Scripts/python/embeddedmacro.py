@@ -1,25 +1,58 @@
 #!/opt/libreoffice5.4/program/python
 # -*- coding: utf-8 -*-
 import unohelper  # オートメーションには必須(必須なのはuno)。
-import os
+import os, sys
+from types import ModuleType
 from com.sun.star.awt import XEnhancedMouseClickHandler
 from com.sun.star.awt import MouseButton  # 定数
 from com.sun.star.ui import XContextMenuInterceptor
 from com.sun.star.ui.ContextMenuInterceptorAction import EXECUTE_MODIFIED  # enum
 from com.sun.star.ui import ActionTriggerSeparatorType  # 定数
-try:
-	from fordebugging import enableRemoteDebugging  # デバッグ用。マクロで実行した時。
-except:
-	pass
+global XSCRIPTCONTEXT  # PyDevのエラー抑制用。
+consts = None
+
+# def load_module(simplefileaccess, modulepath):
+# 	inputstream = simplefileaccess.openFileRead(modulepath)
+# 	dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
+# 	source = bytes(b).decode("utf-8")  # モジュールのソースをテキストで取得。
+# 	mod = sys.modules.setdefault(modulepath, ModuleType(modulepath))  # 新規モジュールをsys.modulesに挿入。
+# 	code = compile(source, modulepath, 'exec')  # urlを呼び出し元としてソースコードをコンパイルする。
+# 	mod.__file__ = modulepath  # モジュールの__file__を設定。
+# 	mod.__package__ = ''  # モジュールの__package__を設定。
+# 	exec(code, mod.__dict__)  # モジュールの名前空間を設定する。
+# 	return mod
+# def getModuleFolderPath(ctx, smgr, doc):
+# 	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)
+# 	transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(doc)
+# 	tdocurl = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # ex. vnd.sun.star.tdoc:/1	
+# 	return "/".join((tdocurl, "Scripts/python/pythonpath"))  # 開いているドキュメント内の埋め込みマクロフォルダへのパス。
+
+
+
 def macro(documentevent=None):  # 引数は文書のイベント駆動用。  
 	doc = XSCRIPTCONTEXT.getDocument() if documentevent is None else documentevent.Source  # ドキュメントのモデルを取得。 
+	controller = doc.getCurrentController()  # コントローラの取得。
 	ctx = XSCRIPTCONTEXT.getComponentContext()  # コンポーネントコンテクストの取得。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。
+	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  # SimpleFileAccess
+	modulefolderpath = getModuleFolderPath(ctx, smgr, doc)
+	global consts
+	if consts is None:
+		consts = load_module(simplefileaccess, "/".join((modulefolderpath, "consts.py")))
 	
 	
 	
+# 	import pydevd; pydevd.settrace(stdoutToServer=True, stderrToServer=True)
 	
-	controller = doc.getCurrentController()  # コントローラの取得。
+	
+# 	constants = load_module(ctx, smgr, doc, simplefileaccess, "constants.py")
+	s = consts.LISTSHEET["name"]
+	
+	sheet = controller.getActiveSheet()
+	sheet["A1"].setString(s)
+	
+	
+# 	controller = doc.getCurrentController()  # コントローラの取得。
 	controller.addEnhancedMouseClickHandler(EnhancedMouseClickHandler())  # マウスハンドラをコントローラに設定。
 	controller.registerContextMenuInterceptor(ContextMenuInterceptor(ctx, doc))  # コントローラにContextMenuInterceptorを登録する。
 class EnhancedMouseClickHandler(unohelper.Base, XEnhancedMouseClickHandler): # マウスハンドラ
@@ -119,12 +152,19 @@ def getBaseURL(ctx, doc):	 # 埋め込みマクロ、オートメーション、
 		location = "user"  # マクロの場所。
 	relpath = os.path.relpath(filepath, start=macrofolder)  # マクロフォルダからの相対パスを取得。パス区切りがOS依存で返ってくる。
 	return "vnd.sun.star.script:{}${}?language=Python&location={}".format(relpath.replace(os.sep, "|"), "{}", location)  # ScriptingURLのbaseurlを取得。Windowsのためにos.sepでパス区切りを置換。	
+def load_module(simplefileaccess, modulepath):
+	inputstream = simplefileaccess.openFileRead(modulepath)
+	dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
+	source = bytes(b).decode("utf-8")  # モジュールのソースをテキストで取得。
+	mod = sys.modules.setdefault(modulepath, ModuleType(modulepath))  # 新規モジュールをsys.modulesに挿入。
+	code = compile(source, modulepath, 'exec')  # urlを呼び出し元としてソースコードをコンパイルする。
+	mod.__file__ = modulepath  # モジュールの__file__を設定。
+	mod.__package__ = ''  # モジュールの__package__を設定。
+	exec(code, mod.__dict__)  # モジュールの名前空間を設定する。
+	return mod
+def getModuleFolderPath(ctx, smgr, doc):
+	transientdocumentsdocumentcontentfactory = smgr.createInstanceWithContext("com.sun.star.frame.TransientDocumentsDocumentContentFactory", ctx)
+	transientdocumentsdocumentcontent = transientdocumentsdocumentcontentfactory.createDocumentContent(doc)
+	tdocurl = transientdocumentsdocumentcontent.getIdentifier().getContentIdentifier()  # ex. vnd.sun.star.tdoc:/1	
+	return "/".join((tdocurl, "Scripts/python/pythonpath"))  # 開いているドキュメント内の埋め込みマクロフォルダへのパス。
 g_exportedScripts = macro, #マクロセレクターに限定表示させる関数をタプルで指定。		
-if __name__ == "__main__":  # オートメーションで実行するとき
-	from pythonpath.forautomation import automation
-	try:
-		from pythonpath.fordebugging import enableRemoteDebugging  # デバッグ用。
-	except:
-		pass
-	XSCRIPTCONTEXT = automation()  # XSCRIPTCONTEXTを取得。	
-	macro()  # マクロの実行。
