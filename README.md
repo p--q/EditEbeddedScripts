@@ -14,6 +14,8 @@ Place the only one Calc document you want to edit the embedded macro in the same
 
 ex.  CalcDoc.ods
 
+There are many examples of embedded macros in <a href="https://sites.google.com/site/blogger2013pq/home/downloadfiles/calcexample">CalcExamples - p--q</a>.
+
 ### Write embedded macro with replaceEmbeddedScripts.py
 
 Put the macro you want to embed in the src folder in the same path as in the document.
