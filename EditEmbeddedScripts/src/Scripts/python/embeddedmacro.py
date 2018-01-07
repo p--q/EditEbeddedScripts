@@ -8,6 +8,9 @@ from com.sun.star.awt import MouseButton  # 定数
 from com.sun.star.ui import XContextMenuInterceptor
 from com.sun.star.ui.ContextMenuInterceptorAction import EXECUTE_MODIFIED  # enum
 from com.sun.star.ui import ActionTriggerSeparatorType  # 定数
+from com.sun.star.sheet import XActivationEventListener
+
+
 global XSCRIPTCONTEXT  # PyDevのエラー抑制用。
 def macro(documentevent=None):  # 引数は文書のイベント駆動用。  
 	doc = XSCRIPTCONTEXT.getDocument() if documentevent is None else documentevent.Source  # ドキュメントのモデルを取得。 
@@ -17,16 +20,69 @@ def macro(documentevent=None):  # 引数は文書のイベント駆動用。
 	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  # SimpleFileAccess
 	modulefolderpath = getModuleFolderPath(ctx, smgr, doc)  # 埋め込みモジュールフォルダへのURLを取得。
 	consts = load_module(simplefileaccess, "/".join((modulefolderpath, "consts.py")))  # consts.pyをモジュールとして読み込む。
+	controller.addActivationEventListener(ActivationEventListener(controller))  # ActivationEventListener
+	controller.addEnhancedMouseClickHandler(EnhancedMouseClickHandler(controller))  # EnhancedMouseClickHandler
+
 	
 # 	セルを選択した時　罫線を引く
 
 
 
-# シートをアクティベートした時　シートを選択した時?
-	
 
-	controller.addEnhancedMouseClickHandler(EnhancedMouseClickHandler())  # マウスハンドラ。ダブルクリックの時の対応。
 	controller.registerContextMenuInterceptor(ContextMenuInterceptor(ctx, smgr, doc, consts))  # コントローラにContextMenuInterceptorを登録する。右クリックの時の対応。
+class ActivationEventListener(unohelper.Base, XActivationEventListener):
+	def __init__(self, controller):  # subjはコントローラー。
+		self.controller = controller
+	def activeSpreadsheetChanged(self, activationevent):  # アクティブシートが変化した時に発火。
+		sheet = activationevent.ActiveSheet  # アクティブになったシートを取得。
+		sheetname = sheet.getName()  # アクティブシート名を取得。
+		sheet["A1"].setString("ActiveSheetName: {}".format(sheetname))
+	def disposing(self, eventobject):
+		self.controller.removeActivationEventListener(self)	
+class EnhancedMouseClickHandler(unohelper.Base, XEnhancedMouseClickHandler):
+	def __init__(self, controller):  # subjはコントローラー。
+		self.controller = controller
+	def mousePressed(self, enhancedmouseevent):  # セルをクリックした時に発火する。
+		target = enhancedmouseevent.Target  # ターゲットのセルを取得。
+		if enhancedmouseevent.Buttons==MouseButton.LEFT:  # 左ボタンのとき
+			controller = self.controller
+			if enhancedmouseevent.ClickCount==2:  # ダブルクリックの時
+				celladdress = target.getCellAddress()  # ターゲットのセルアドレスを取得。
+				if controller.hasFrozenPanes():  # 表示→セルの固定、がされている時。
+					if 
+					
+					
+					splitrow = controller.getSplitRow()
+					splitcolumn = controller.getSplitColumn()
+		
+				
+				if target.supportsService("com.sun.star.sheet.SheetCell"):  # ターゲットがセルの時。
+					
+					target.setString("R{}C{}".format(celladdress.Row, celladdress.Column))
+					return False  # セル編集モードにしない。
+		return True  # Falseを返すと右クリックメニューがでてこなくなる。		
+		
+		
+		
+		self._createLog(enhancedmouseevent, inspect.currentframe().f_code.co_name)
+		return True
+	def mouseReleased(self, enhancedmouseevent):
+		self._createLog(enhancedmouseevent, inspect.currentframe().f_code.co_name)
+		return True
+	def disposing(self, eventobject):
+		self.controller.removeEnhancedMouseClickHandler(self)
+	def _createLog(self, enhancedmouseevent, methodname):
+		dirpath, name = self.args
+		target = enhancedmouseevent.Target
+		target = getStringAddressFromCellRange(target) or target  # sourceがセル範囲の時は選択範囲の文字列アドレスを返す。
+		clickcount = enhancedmouseevent.ClickCount
+		filename = "_".join((name, methodname, "ClickCount", str(clickcount)))
+		createLog(dirpath, filename, "Buttons: {}, ClickCount: {}, PopupTrigger {}, Modifiers: {}, Target: {}".format(enhancedmouseevent.Buttons, clickcount, enhancedmouseevent.PopupTrigger, enhancedmouseevent.Modifiers, target))	
+		
+		
+		
+		
+		
 class EnhancedMouseClickHandler(unohelper.Base, XEnhancedMouseClickHandler): # マウスハンドラ
 	def mousePressed(self, enhancedmouseevent):  # マウスボタンをクリックした時。ブーリアンを返さないといけない。
 		target = enhancedmouseevent.Target  # ターゲットを取得。
