@@ -1,16 +1,22 @@
 #!/opt/libreoffice5.4/program/python
 # -*- coding: utf-8 -*-
 # Created by modifying urlimport.py in 10.11.loading_modules_from_a_remote_machine_using_import_hooks of Python Cookbook 3rd Edition.
+# 一旦LibreOfficeを終了させないとimportはキャッシュが使われるのでデバッグ時は必ずLibreOfficeを終了すること!!!
+# インポートするパッケジーには__init__.pyが必要。
 import sys
 import importlib.abc
 from types import ModuleType
+def _get_links(simplefileaccess, url):
+	foldercontents = simplefileaccess.getFolderContents(url, True)  # フルパスで返ってくる。
+	tdocpath = "".join((url, "/"))
+	return [content.replace(tdocpath, "") for content in foldercontents]
 class UrlMetaFinder(importlib.abc.MetaPathFinder):  # meta path finderの実装。
 	def __init__(self, simplefileaccess, baseurl):
 		self._simplefileaccess = simplefileaccess
 		self._baseurl = baseurl
 		self._links   = {}
 		self._loaders = {baseurl: UrlModuleLoader(simplefileaccess, baseurl)}
-	def find_spec(self, fullname, path=None):  # find_moduleはPython3.4で撤廃。
+	def find_module(self, fullname, path=None):  # find_moduleはPython3.4で撤廃だが、find_spec()にしてもそのままではうまく動かない。
 		if path is None:
 			baseurl = self._baseurl
 		else:
@@ -20,13 +26,13 @@ class UrlMetaFinder(importlib.abc.MetaPathFinder):  # meta path finderの実装�
 		parts = fullname.split('.')
 		basename = parts[-1]
 		if basename not in self._links:  # Check link cache
-			self._links[baseurl] = self._simplefileaccess.getFolderContents(baseurl, True)
-		if basename in self._links[baseurl]:  # Check if it's a package
+			self._links[baseurl] = _get_links(self._simplefileaccess, baseurl)
+		if basename in self._links[baseurl]:  # Check if it's a package。パッケージの時。
 			fullurl = "/".join((self._baseurl, basename))
-			loader = UrlPackageLoader(fullurl)
+			loader = UrlPackageLoader(self._simplefileaccess, fullurl)
 			try:  # Attempt to load the package (which accesses __init__.py)
 				loader.load_module(fullname)
-				self._links[fullurl] = self._simplefileaccess.getFolderContents(fullurl, True)
+				self._links[fullurl] = _get_links(self._simplefileaccess, fullurl)
 				self._loaders[fullurl] = UrlModuleLoader(self._simplefileaccess, fullurl)
 			except ImportError:
 				loader = None
@@ -65,7 +71,7 @@ class UrlModuleLoader(importlib.abc.SourceLoader):  # Module Loader for a URL
 		if filename in self._source_cache:
 			return self._source_cache[filename]
 		try:
-			inputstream = self._simplefileaccess.openFileRead(fullname)
+			inputstream = self._simplefileaccess.openFileRead(filename)
 			dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
 			source = bytes(b).decode("utf-8")  # モジュールのソースをテキストで取得。
 			self._source_cache[filename] = source
@@ -77,9 +83,9 @@ class UrlModuleLoader(importlib.abc.SourceLoader):  # Module Loader for a URL
 class UrlPackageLoader(UrlModuleLoader):  # Package loader for a URL
 	def load_module(self, fullname):
 		mod = super().load_module(fullname)
-		mod.__path__ = [ self._baseurl ]
+		mod.__path__ = [self._baseurl]
 		mod.__package__ = fullname
-	def get_filename(self, fullname):
+	def get_filename(self, fullname):  # パッケージの時はまず__init__.pyを実行。
 		return "/".join((self._baseurl, '__init__.py'))
 	def is_package(self, fullname):
 		return True

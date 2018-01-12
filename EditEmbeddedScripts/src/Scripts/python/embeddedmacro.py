@@ -6,6 +6,8 @@ from types import ModuleType
 global XSCRIPTCONTEXT  # PyDevのエラー抑制用。
 def macro(documentevent=None):  # 引数は文書のイベント駆動用。  
 	doc = XSCRIPTCONTEXT.getDocument() if documentevent is None else documentevent.Source  # ドキュメントのモデルを取得。 
+	controller = doc.getCurrentController()  # コントローラの取得。
+	sheet = controller.getActiveSheet()
 	ctx = XSCRIPTCONTEXT.getComponentContext()  # コンポーネントコンテクストの取得。
 	smgr = ctx.getServiceManager()  # サービスマネージャーの取得。
 	simplefileaccess = smgr.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", ctx)  # SimpleFileAccess
@@ -13,9 +15,10 @@ def macro(documentevent=None):  # 引数は文書のイベント駆動用。
 	tdocimport = load_module(simplefileaccess, "/".join((modulefolderpath, "tdocimport.py")))  # import hooks
 	tdocimport.install_meta(simplefileaccess, modulefolderpath)
 	import consts
-	controller = doc.getCurrentController()  # コントローラの取得。
-	sheet = controller.getActiveSheet()
+	from subdir import submod
 	sheet["A1"].setString(consts.LISTSHEET["name"])
+	submod.fromsubmod(sheet)
+	tdocimport.remove_meta(modulefolderpath)
 def load_module(simplefileaccess, modulepath):
 	inputstream = simplefileaccess.openFileRead(modulepath)
 	dummy, b = inputstream.readBytes([], inputstream.available())  # simplefileaccess.getSize(module_tdocurl)は0が返る。
