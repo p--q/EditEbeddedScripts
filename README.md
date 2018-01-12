@@ -26,6 +26,8 @@ Execute replaceEmbeddedScripts.py in the tools folder.
 
 This script writes Scripts/python folder to the Calc document and edits its manifest.xml.
 
+From version 0.1.3, close the document when it is open.
+
 ### Extract embedded macro from document with getEmbeddedScripts.py
 
 Execute getEmbeddedScripts.py in the tools folder.
