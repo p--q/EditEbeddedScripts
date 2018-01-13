@@ -5,7 +5,5 @@ encoding//src/Scripts/python/pythonpath/subdir/__init__.py=utf-8
 encoding//src/Scripts/python/pythonpath/subdir/consts2.py=utf-8
 encoding//src/Scripts/python/pythonpath/subdir/submod.py=utf-8
 encoding//src/Scripts/python/pythonpath/tdocimport.py=utf-8
-encoding//src/unused/macroimport.py=utf-8
-encoding//src/unused/tdocimport.py=utf-8
 encoding//tools/getEmbeddedScripts.py=utf-8
 encoding//tools/replaceEmbeddedScripts.py=utf-8
