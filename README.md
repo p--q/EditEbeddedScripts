@@ -12,7 +12,7 @@ LibreOffice 5.4 in Ubuntu 14.04 32bit
 
 Place the only one Calc document you want to edit the embedded macro in the same hierarchy as the tools folder (in other words,  <a href="https://github.com/p--q/EditEbeddedScripts/tree/master/EditEmbeddedScripts">EditEmbeddedScripts</a> folder).
 
-ex.  CalcDoc.ods
+ex.  tdocimport.ods
 
 There are many examples of embedded macros in <a href="https://sites.google.com/site/blogger2013pq/home/downloadfiles/calcexample">CalcExamples - p--q</a>.
 
